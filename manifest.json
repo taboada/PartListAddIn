@@ -1,0 +1,29 @@
+{
+  "name": "Part List Generator",
+  "description": "Génère une liste des pièces capables dans l'environnement Drawing.",
+  "author": "VotreNom",
+  "version": "1.0",
+  "company": "xAI",
+  "id": "com.example.partlist",
+  "resources": [
+    {
+      "path": "PartListAddIn.py"
+    },
+    {
+      "path": "PartListCommand/PartListCommand.py"
+    },
+    {
+      "path":"PartListCommandUI/PartListCommandUI.py"
+    }
+  ],
+  "commands": [
+    {
+      "commandId": "partListCommand",
+      "commandName": "Générer Liste Pièces",
+      "commandDescription": "Crée une liste des pièces capables.",
+      "environments": ["DrawingEnvironment", "DesignEnvironment"],
+      "script": "PartListAddIn.py",
+      "pythonScriptFile": "PartListAddIn.py"
+    }
+  ]
+}
