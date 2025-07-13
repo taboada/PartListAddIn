@@ -6,16 +6,18 @@ NON_ORIENTED_MATERIALS = {"medium", "mdf", "agglomeré", "ParticleBoard"}
 
 def get_part_list(root_comp):
     part_list = defaultdict(lambda: {'quantity': 0, 'names': set()})  # Utiliser un set pour les noms uniques
-    processed_components = set()  # Éviter de traiter plusieurs fois le même composant
+    processed_components = set()  # Stocker les objectId pour éviter les doublons
 
     # Parcourir les occurrences pour identifier les composants uniques
     occurrences = root_comp.occurrences
     for occurrence in occurrences:
         sub_comp = occurrence.component
-        if sub_comp in processed_components or occurrence.isReferencedDocument:
+        # Utiliser objectId comme clé unique
+        comp_id = sub_comp.objectId
+        if comp_id in processed_components or occurrence.isReferencedDocument:
             continue  # Ignorer les composants externes ou déjà traités
         
-        # Prendre la boîte englobante du composant pour dimensions brutes
+        # Utiliser la boîte englobante du composant pour dimensions brutes
         bounding_box = sub_comp.boundingBox
         if not bounding_box:
             continue
@@ -32,7 +34,7 @@ def get_part_list(root_comp):
         dims.sort(reverse=True)
         length, width, thickness = dims
         
-        # Déterminer le matériau à partir du premier corps valide (approximation)
+        # Déterminer le matériau à partir du premier corps valide
         material = 'Non défini'
         for body in sub_comp.bRepBodies:
             if body.isValid and body.material:
@@ -48,11 +50,14 @@ def get_part_list(root_comp):
             orientation = 'non défini'
         
         part_key = (length, width, thickness, material, orientation)
-        occurrence_name = occurrence.name if occurrence.name else sub_comp.name
-        part_list[part_key]['quantity'] += 1
-        part_list[part_key]['names'].add(occurrence_name)
+        # Ajouter les noms de toutes les occurrences du même composant
+        for occ in occurrences:
+            if occ.component == sub_comp:
+                occ_name = occ.name if occ.name else sub_comp.name
+                part_list[part_key]['names'].add(occ_name)
+        part_list[part_key]['quantity'] = len(part_list[part_key]['names'])  # Mettre à jour la quantité
         
-        processed_components.add(sub_comp)
+        processed_components.add(comp_id)
     
     # Vérifier aussi les corps au niveau racine (si applicable, comme fallback)
     for body in root_comp.bRepBodies:
@@ -62,7 +67,7 @@ def get_part_list(root_comp):
         material = body.material.name if body.material else 'Non défini'
         bounding_box = body.boundingBox
         min_point = bounding_box.minPoint
-        max_point = boundingBox.maxPoint
+        max_point = bounding_box.maxPoint
         
         dims = [
             (max_point.x - min_point.x) * 10,
