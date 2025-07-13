@@ -6,15 +6,15 @@ NON_ORIENTED_MATERIALS = {"medium", "mdf", "agglomeré", "ParticleBoard"}
 
 def get_part_list(root_comp):
     part_list = defaultdict(lambda: {'quantity': 0, 'names': set()})  # Utiliser un set pour les noms uniques
-    processed_components = set()  # Stocker les objectId pour éviter les doublons
+    processed_components = set()  # Stocker les noms uniques pour éviter les doublons
 
     # Parcourir les occurrences pour identifier les composants uniques
     occurrences = root_comp.occurrences
     for occurrence in occurrences:
         sub_comp = occurrence.component
-        # Utiliser objectId comme clé unique
-        comp_id = sub_comp.objectId
-        if comp_id in processed_components or occurrence.isReferencedDocument:
+        # Utiliser un tuple (nom du composant, nom du parent) comme clé unique
+        comp_key = (sub_comp.name, sub_comp.parentComponent.name if sub_comp.parentComponent else 'root')
+        if comp_key in processed_components or occurrence.isReferencedDocument:
             continue  # Ignorer les composants externes ou déjà traités
         
         # Utiliser la boîte englobante du composant pour dimensions brutes
@@ -57,7 +57,7 @@ def get_part_list(root_comp):
                 part_list[part_key]['names'].add(occ_name)
         part_list[part_key]['quantity'] = len(part_list[part_key]['names'])  # Mettre à jour la quantité
         
-        processed_components.add(comp_id)
+        processed_components.add(comp_key)
     
     # Vérifier aussi les corps au niveau racine (si applicable, comme fallback)
     for body in root_comp.bRepBodies:
